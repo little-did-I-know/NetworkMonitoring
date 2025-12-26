@@ -1,2 +1,26 @@
 .venv
 .idea
+
+# Environment variables
+.env
+
+# Grafana data
+grafana/data/
+grafana/data/*
+
+# Prometheus data
+prometheus/data/
+prometheus/data/*
+
+# Docker volumes
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+*.swp
+*.swo
+*~
