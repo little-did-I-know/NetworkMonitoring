@@ -28,7 +28,7 @@ scrape_configs:
   # cAdvisor - Docker Container Metrics
   - job_name: 'cadvisor'
     static_configs:
-      - targets: ['cadvisor:8070']
+      - targets: ['cadvisor:8080']
         labels:
           instance: 'unraid-server'
     metric_relabel_configs:
