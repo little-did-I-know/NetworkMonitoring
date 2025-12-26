@@ -5,8 +5,9 @@ A comprehensive Docker-based monitoring solution for Unraid servers, featuring G
 ## Features
 
 - **System Resources Monitoring**: CPU, RAM, Disk I/O, and Network statistics
+- **NVIDIA GPU Monitoring**: GPU temperature, utilization, memory usage, power consumption, and clock speeds via nvidia-smi
 - **Unraid Array Health**: Array status, parity checks, disk health, and SMART data monitoring
-- **Email Alerts**: Automatic notifications for critical disk issues (temperature, SMART failures, disk space, parity errors)
+- **Email Alerts**: Automatic notifications for critical disk and GPU issues (temperature, SMART failures, disk space, parity errors)
 - **Storage & Array Health**: Filesystem usage, disk space, and array status
 - **Docker Container Metrics**: Resource usage per container, network, and disk I/O
 - **Hardware Sensors**: CPU/GPU temperatures, fan speeds, and power consumption
@@ -20,8 +21,9 @@ This monitoring stack consists of:
 - **Grafana**: Visualization and dashboard platform (Port 3000)
 - **Prometheus**: Time-series metrics database (Port 9090)
 - **Node Exporter**: System-level metrics collector (Port 9100)
-- **cAdvisor**: Container metrics collector (Port 8080)
+- **cAdvisor**: Container metrics collector (Port 8070)
 - **Unraid Exporter**: Custom Unraid array and disk health metrics (Port 9101)
+- **NVIDIA GPU Exporter**: GPU metrics via nvidia-smi (Port 9835)
 
 ## Prerequisites
 
@@ -71,6 +73,12 @@ This monitoring stack consists of:
    docker-compose ps
    ```
 
+7. **Access Grafana and start monitoring:**
+   - Open `http://YOUR-UNRAID-IP:3000` in your browser
+   - Login with `admin` / `admin` (or your configured password)
+   - You'll automatically see the **Home Dashboard** with an overview of everything
+   - **New to Grafana?** Follow the [Quick Start Guide](QUICK_START_GUIDE.md)
+
 ### Option 2: Unraid Community Applications
 
 If you prefer using the Unraid UI:
@@ -89,11 +97,12 @@ If you prefer using the Unraid UI:
 Once deployed, access your monitoring services at:
 
 ```
-Grafana:         http://YOUR-UNRAID-IP:3000
-Prometheus:      http://YOUR-UNRAID-IP:9090
-Node Exporter:   http://YOUR-UNRAID-IP:9100/metrics
-cAdvisor:        http://YOUR-UNRAID-IP:8080
-Unraid Exporter: http://YOUR-UNRAID-IP:9101/metrics
+Grafana:              http://YOUR-UNRAID-IP:3000
+Prometheus:           http://YOUR-UNRAID-IP:9090
+Node Exporter:        http://YOUR-UNRAID-IP:9100/metrics
+cAdvisor:             http://YOUR-UNRAID-IP:8070
+Unraid Exporter:      http://YOUR-UNRAID-IP:9101/metrics
+NVIDIA GPU Exporter:  http://YOUR-UNRAID-IP:9835/metrics
 ```
 
 **Default Grafana credentials:**
@@ -102,9 +111,35 @@ Unraid Exporter: http://YOUR-UNRAID-IP:9101/metrics
 
 You'll be prompted to change the password on first login.
 
+### 🏠 Default Home Dashboard
+
+**New to Grafana?** Don't worry! When you first log in, you'll automatically see the **Home Dashboard** - a comprehensive overview designed specifically for beginners.
+
+The Home Dashboard includes:
+- **Quick status gauges** - Array, CPU, Memory, GPU, Containers at a glance
+- **Dashboard navigation** - Easy links to all detailed dashboards
+- **Key metrics** - CPU/Memory trends, network traffic, disk temperatures
+- **Quick stats** - System uptime, disk count, resources
+- **Help section** - Built-in guidance and links
+
+📖 **First time using Grafana?** Check out **[QUICK_START_GUIDE.md](QUICK_START_GUIDE.md)** for a complete beginner's tutorial with:
+- How to navigate dashboards
+- Understanding what each metric means
+- What to look for in monitoring
+- Troubleshooting tips
+- Keyboard shortcuts and pro tips
+
 ## Available Dashboards
 
-The following dashboards are automatically provisioned:
+The following dashboards are automatically provisioned and ready to use:
+
+### 0. Home Dashboard (Default)
+- System status overview at a glance
+- Quick navigation to all dashboards
+- CPU, Memory, and Network trends
+- Disk temperatures and space usage
+- Quick stats summary
+- Built-in help and documentation links
 
 ### 1. Unraid System Overview
 - Real-time CPU usage
@@ -142,6 +177,109 @@ The following dashboards are automatically provisioned:
 - Reallocated sectors count
 - Parity errors tracking
 - Disk status (active/standby/disabled)
+
+### 5. NVIDIA GPU Monitoring
+- GPU temperature with gauges and thresholds
+- GPU utilization (GPU and memory controllers)
+- VRAM usage and availability
+- Power consumption and power limit
+- Fan speed monitoring
+- GPU and memory clock speeds
+- Encoder/Decoder utilization
+- Historical trends for all metrics
+
+## NVIDIA GPU Monitoring
+
+The monitoring stack includes comprehensive NVIDIA GPU monitoring using nvidia-smi. Track your GPU's performance, temperature, and resource usage in real-time.
+
+### Monitored GPU Metrics
+
+**Temperature & Cooling:**
+- GPU temperature (°C)
+- Fan speed (%)
+- Thermal throttling detection
+
+**Performance:**
+- GPU utilization (%)
+- Memory controller utilization (%)
+- Graphics clock speed (MHz)
+- Memory clock speed (MHz)
+- Power consumption (W)
+- Power limit percentage
+
+**Memory:**
+- VRAM used (GB)
+- VRAM total (GB)
+- Memory usage percentage
+
+**Video Processing:**
+- Encoder utilization (for video encoding)
+- Decoder utilization (for video decoding)
+
+### GPU Alerts
+
+Four automatic GPU alerts are configured:
+
+**Critical Alerts** (🔥):
+- **Critical GPU Temperature** - Above 85°C (wait: 5 min, repeat: 1 hour)
+- **GPU Memory Critical** - Above 95% usage (wait: 5 min, repeat: 1 hour)
+
+**Warning Alerts** (⚠️):
+- **High GPU Temperature** - Above 75°C (wait: 10 min, repeat: 4 hours)
+- **GPU Power Limit Reached** - Above 98% of power limit (wait: 15 min, repeat: 4 hours)
+
+### Requirements
+
+To use GPU monitoring, your Unraid server must have:
+1. NVIDIA GPU installed
+2. NVIDIA drivers installed
+3. `nvidia-smi` command available
+
+**Verify GPU is detected:**
+```bash
+nvidia-smi
+```
+
+If you see GPU information, you're all set!
+
+### Troubleshooting GPU Monitoring
+
+**Problem**: No GPU metrics showing
+
+**Solutions**:
+1. Verify nvidia-smi works on the host:
+   ```bash
+   nvidia-smi
+   ```
+
+2. Check nvidia-gpu-exporter logs:
+   ```bash
+   docker-compose logs nvidia-gpu-exporter
+   ```
+
+3. Verify Prometheus is scraping GPU metrics:
+   - Go to `http://YOUR-UNRAID-IP:9090/targets`
+   - Check if `nvidia-gpu` target shows "UP"
+
+4. Test GPU exporter directly:
+   ```bash
+   curl http://localhost:9835/metrics | grep nvidia_gpu
+   ```
+
+**Problem**: Multiple GPUs not showing
+
+The exporter automatically detects all NVIDIA GPUs. If you have multiple GPUs, ensure:
+- All GPUs are visible to `nvidia-smi`
+- Docker has access to all GPU devices
+
+**For multiple GPUs**, you may need to add additional device mappings in `docker-compose.yml`:
+```yaml
+devices:
+  - /dev/nvidiactl:/dev/nvidiactl
+  - /dev/nvidia0:/dev/nvidia0
+  - /dev/nvidia1:/dev/nvidia1  # Add for second GPU
+  - /dev/nvidia-uvm:/dev/nvidia-uvm
+```
 
 ## Unraid Array Health Monitoring
 

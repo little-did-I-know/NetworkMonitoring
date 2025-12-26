@@ -13,6 +13,9 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
       - GF_INSTALL_PLUGINS=
       - GF_USERS_ALLOW_SIGN_UP=false
+      # Default settings for user-friendly experience
+      - GF_USERS_DEFAULT_THEME=dark
+      - GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH=/etc/grafana/provisioning/dashboards/home-dashboard.json
       # SMTP Configuration for Email Alerts
       - GF_SMTP_ENABLED=${SMTP_ENABLED:-false}
       - GF_SMTP_HOST=${SMTP_HOST:-smtp.gmail.com:587}
@@ -25,6 +28,7 @@ services:
     volumes:
       - ./grafana/data:/var/lib/grafana
       - ./grafana/provisioning:/etc/grafana/provisioning
+      - ./grafana/grafana.ini:/etc/grafana/grafana.ini
     networks:
       - monitoring
     depends_on:
@@ -104,6 +108,25 @@ services:
       - /dev:/dev:ro
       - /mnt:/mnt:ro
     privileged: true
+    networks:
+      - monitoring
+
+  # NVIDIA GPU Exporter - GPU Metrics via nvidia-smi
+  nvidia-gpu-exporter:
+    image: utkuozdemir/nvidia_gpu_exporter:1.2.0
+    container_name: nvidia-gpu-exporter
+    restart: unless-stopped
+    ports:
+      - "9835:9835"
+    volumes:
+      - /usr/bin/nvidia-smi:/usr/bin/nvidia-smi:ro
+      - /usr/lib/x86_64-linux-gnu:/usr/lib/x86_64-linux-gnu:ro
+    devices:
+      - /dev/nvidiactl:/dev/nvidiactl
+      - /dev/nvidia0:/dev/nvidia0
+      - /dev/nvidia-uvm:/dev/nvidia-uvm
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
     networks:
       - monitoring
 

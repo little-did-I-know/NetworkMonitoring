@@ -413,3 +413,212 @@ groups:
           summary: CRITICAL - Parity errors detected
         labels:
           severity: critical
+
+  - orgId: 1
+    name: GPU Alerts
+    folder: Unraid Monitoring
+    interval: 1m
+    rules:
+      - uid: gpu_temp_critical
+        title: Critical GPU Temperature
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: nvidia_gpu_temperature_celsius
+              refId: A
+          - refId: B
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              expression: A
+              reducer: last
+              refId: B
+          - refId: C
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator:
+                    params:
+                      - 85
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - C
+                  type: query
+              refId: C
+        noDataState: NoData
+        execErrState: Alerting
+        for: 5m
+        annotations:
+          description: 'GPU {{ $labels.name }} temperature is {{ $values.B.Value }}°C (threshold: 85°C)'
+          summary: Critical GPU temperature detected
+        labels:
+          severity: critical
+
+      - uid: gpu_temp_warning
+        title: High GPU Temperature
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: nvidia_gpu_temperature_celsius
+              refId: A
+          - refId: B
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              expression: A
+              reducer: last
+              refId: B
+          - refId: C
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator:
+                    params:
+                      - 75
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - C
+                  type: query
+              refId: C
+        noDataState: NoData
+        execErrState: OK
+        for: 10m
+        annotations:
+          description: 'GPU {{ $labels.name }} temperature is {{ $values.B.Value }}°C (threshold: 75°C)'
+          summary: High GPU temperature warning
+        labels:
+          severity: warning
+
+      - uid: gpu_memory_critical
+        title: GPU Memory Critical
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: (nvidia_gpu_memory_used_bytes / nvidia_gpu_memory_total_bytes) * 100
+              refId: A
+          - refId: B
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              expression: A
+              reducer: last
+              refId: B
+          - refId: C
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator:
+                    params:
+                      - 95
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - C
+                  type: query
+              refId: C
+        noDataState: NoData
+        execErrState: OK
+        for: 5m
+        annotations:
+          description: 'GPU {{ $labels.name }} memory usage is {{ $values.B.Value }}% (threshold: 95%)'
+          summary: GPU memory critically high
+        labels:
+          severity: critical
+
+      - uid: gpu_power_limit
+        title: GPU Power Limit Reached
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: (nvidia_gpu_power_usage_milliwatts / nvidia_gpu_power_limit_milliwatts) * 100
+              refId: A
+          - refId: B
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              expression: A
+              reducer: last
+              refId: B
+          - refId: C
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator:
+                    params:
+                      - 98
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - C
+                  type: query
+              refId: C
+        noDataState: NoData
+        execErrState: OK
+        for: 15m
+        annotations:
+          description: 'GPU {{ $labels.name }} is at {{ $values.B.Value }}% of power limit'
+          summary: GPU power limit warning - thermal throttling may occur
+        labels:
+          severity: warning

@@ -1,0 +1,424 @@
+{
+  "dashboard": {
+    "title": "Unraid Monitoring - Home",
+    "tags": ["home", "overview"],
+    "timezone": "browser",
+    "refresh": "30s",
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "panels": [
+      {
+        "id": 1,
+        "title": "🏠 Welcome to Unraid Monitoring",
+        "type": "text",
+        "gridPos": {"h": 4, "w": 24, "x": 0, "y": 0},
+        "options": {
+          "mode": "markdown",
+          "content": "## Quick Navigation\n\n👉 **[System Overview](#)** | **[Docker Containers](#)** | **[GPU Monitoring](#)** | **[Array Health](#)** | **[Hardware Sensors](#)**\n\n---\n\nThis dashboard provides a quick overview of your Unraid server. Click the links above or use the dashboard selector (top-left) to view detailed metrics."
+        }
+      },
+      {
+        "id": 2,
+        "title": "Array Status",
+        "type": "stat",
+        "gridPos": {"h": 4, "w": 4, "x": 0, "y": 4},
+        "targets": [
+          {
+            "expr": "unraid_array_state{array=\"md\"}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "mappings": [
+              {
+                "type": "value",
+                "options": {
+                  "0": {"text": "STOPPED", "color": "red"},
+                  "1": {"text": "STARTED", "color": "green"}
+                }
+              }
+            ],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": 0, "color": "red"},
+                {"value": 1, "color": "green"}
+              ]
+            }
+          }
+        },
+        "options": {
+          "textMode": "value_and_name",
+          "colorMode": "background",
+          "graphMode": "none"
+        }
+      },
+      {
+        "id": 3,
+        "title": "CPU Usage",
+        "type": "gauge",
+        "gridPos": {"h": 4, "w": 5, "x": 4, "y": 4},
+        "targets": [
+          {
+            "expr": "100 - (avg by (instance) (irate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "min": 0,
+            "max": 100,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": 0, "color": "green"},
+                {"value": 70, "color": "yellow"},
+                {"value": 90, "color": "red"}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 4,
+        "title": "Memory Usage",
+        "type": "gauge",
+        "gridPos": {"h": 4, "w": 5, "x": 9, "y": 4},
+        "targets": [
+          {
+            "expr": "(1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "min": 0,
+            "max": 100,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": 0, "color": "green"},
+                {"value": 70, "color": "yellow"},
+                {"value": 90, "color": "red"}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 5,
+        "title": "GPU Temperature",
+        "type": "gauge",
+        "gridPos": {"h": 4, "w": 5, "x": 14, "y": 4},
+        "targets": [
+          {
+            "expr": "nvidia_gpu_temperature_celsius",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "celsius",
+            "min": 0,
+            "max": 100,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": 0, "color": "green"},
+                {"value": 70, "color": "yellow"},
+                {"value": 85, "color": "red"}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 6,
+        "title": "Running Containers",
+        "type": "stat",
+        "gridPos": {"h": 4, "w": 5, "x": 19, "y": 4},
+        "targets": [
+          {
+            "expr": "count(container_last_seen{name!=\"\"})",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": 0, "color": "green"}
+              ]
+            }
+          }
+        },
+        "options": {
+          "textMode": "value_and_name",
+          "colorMode": "background",
+          "graphMode": "area"
+        }
+      },
+      {
+        "id": 7,
+        "title": "🖥️ System Overview",
+        "type": "text",
+        "gridPos": {"h": 3, "w": 12, "x": 0, "y": 8},
+        "options": {
+          "mode": "markdown",
+          "content": "### System Resources\n\nView detailed CPU, memory, disk I/O, and network statistics.\n\n**[➡️ Open System Overview Dashboard](#)**"
+        }
+      },
+      {
+        "id": 8,
+        "title": "🐳 Docker Containers",
+        "type": "text",
+        "gridPos": {"h": 3, "w": 12, "x": 12, "y": 8},
+        "options": {
+          "mode": "markdown",
+          "content": "### Container Monitoring\n\nTrack CPU, memory, network, and disk usage for all containers.\n\n**[➡️ Open Docker Dashboard](#)**"
+        }
+      },
+      {
+        "id": 9,
+        "title": "💾 Array Health",
+        "type": "text",
+        "gridPos": {"h": 3, "w": 12, "x": 0, "y": 11},
+        "options": {
+          "mode": "markdown",
+          "content": "### Unraid Array Status\n\nMonitor disk health, SMART data, parity checks, and array status.\n\n**[➡️ Open Array Health Dashboard](#)**"
+        }
+      },
+      {
+        "id": 10,
+        "title": "🎮 GPU Monitoring",
+        "type": "text",
+        "gridPos": {"h": 3, "w": 12, "x": 12, "y": 11},
+        "options": {
+          "mode": "markdown",
+          "content": "### NVIDIA GPU Stats\n\nView GPU temperature, utilization, memory, and power consumption.\n\n**[➡️ Open GPU Dashboard](#)**"
+        }
+      },
+      {
+        "id": 11,
+        "title": "CPU & Memory Trends",
+        "type": "timeseries",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 14},
+        "targets": [
+          {
+            "expr": "100 - (avg by (instance) (irate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)",
+            "legendFormat": "CPU Usage %",
+            "refId": "A"
+          },
+          {
+            "expr": "(1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100",
+            "legendFormat": "Memory Usage %",
+            "refId": "B"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "min": 0,
+            "max": 100,
+            "color": {"mode": "palette-classic"},
+            "custom": {
+              "fillOpacity": 10,
+              "showPoints": "never"
+            }
+          }
+        },
+        "options": {
+          "legend": {"displayMode": "list", "placement": "bottom"}
+        }
+      },
+      {
+        "id": 12,
+        "title": "Network Traffic",
+        "type": "timeseries",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 14},
+        "targets": [
+          {
+            "expr": "sum(irate(node_network_receive_bytes_total{device!~\"lo|veth.*|br.*|docker.*\"}[5m])) * 8",
+            "legendFormat": "Receive",
+            "refId": "A"
+          },
+          {
+            "expr": "sum(irate(node_network_transmit_bytes_total{device!~\"lo|veth.*|br.*|docker.*\"}[5m])) * 8 * -1",
+            "legendFormat": "Transmit",
+            "refId": "B"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "bps",
+            "color": {"mode": "palette-classic"},
+            "custom": {
+              "fillOpacity": 10,
+              "showPoints": "never"
+            }
+          }
+        },
+        "options": {
+          "legend": {"displayMode": "list", "placement": "bottom"}
+        }
+      },
+      {
+        "id": 13,
+        "title": "Disk Temperatures",
+        "type": "bargauge",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 22},
+        "targets": [
+          {
+            "expr": "unraid_disk_smart_temperature_celsius",
+            "legendFormat": "{{disk}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "celsius",
+            "min": 0,
+            "max": 70,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": 0, "color": "green"},
+                {"value": 40, "color": "yellow"},
+                {"value": 50, "color": "orange"},
+                {"value": 60, "color": "red"}
+              ]
+            }
+          }
+        },
+        "options": {
+          "orientation": "horizontal",
+          "displayMode": "gradient",
+          "showUnfilled": true
+        }
+      },
+      {
+        "id": 14,
+        "title": "Disk Space Usage",
+        "type": "bargauge",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 22},
+        "targets": [
+          {
+            "expr": "(unraid_disk_used_bytes / unraid_disk_size_bytes) * 100",
+            "legendFormat": "{{disk}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "min": 0,
+            "max": 100,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": 0, "color": "green"},
+                {"value": 70, "color": "yellow"},
+                {"value": 85, "color": "orange"},
+                {"value": 95, "color": "red"}
+              ]
+            }
+          }
+        },
+        "options": {
+          "orientation": "horizontal",
+          "displayMode": "gradient",
+          "showUnfilled": true
+        }
+      },
+      {
+        "id": 15,
+        "title": "📊 Quick Stats",
+        "type": "stat",
+        "gridPos": {"h": 6, "w": 24, "x": 0, "y": 30},
+        "targets": [
+          {
+            "expr": "node_time_seconds - node_boot_time_seconds",
+            "legendFormat": "Uptime",
+            "refId": "A"
+          },
+          {
+            "expr": "count(count(node_cpu_seconds_total) by (cpu))",
+            "legendFormat": "CPU Cores",
+            "refId": "B"
+          },
+          {
+            "expr": "node_memory_MemTotal_bytes",
+            "legendFormat": "Total RAM",
+            "refId": "C"
+          },
+          {
+            "expr": "unraid_array_disks_total",
+            "legendFormat": "Array Disks",
+            "refId": "D"
+          },
+          {
+            "expr": "nvidia_gpu_duty_cycle",
+            "legendFormat": "GPU Usage",
+            "refId": "E"
+          },
+          {
+            "expr": "count(container_last_seen{name!=\"\"})",
+            "legendFormat": "Containers",
+            "refId": "F"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "thresholds"},
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": 0, "color": "blue"}
+              ]
+            }
+          },
+          "overrides": [
+            {
+              "matcher": {"id": "byName", "options": "Uptime"},
+              "properties": [{"id": "unit", "value": "s"}]
+            },
+            {
+              "matcher": {"id": "byName", "options": "Total RAM"},
+              "properties": [{"id": "unit", "value": "bytes"}]
+            },
+            {
+              "matcher": {"id": "byName", "options": "GPU Usage"},
+              "properties": [{"id": "unit", "value": "percent"}]
+            }
+          ]
+        },
+        "options": {
+          "textMode": "value_and_name",
+          "colorMode": "background",
+          "graphMode": "area",
+          "orientation": "horizontal"
+        }
+      },
+      {
+        "id": 16,
+        "title": "ℹ️ Help & Information",
+        "type": "text",
+        "gridPos": {"h": 6, "w": 24, "x": 0, "y": 36},
+        "options": {
+          "mode": "markdown",
+          "content": "### Getting Started\n\n**Dashboards:**\n- Use the dashboard selector (📊 icon, top-left) to switch between dashboards\n- All dashboards auto-refresh every 30 seconds\n- Click on any panel to see more details\n\n**Alerts:**\n- Email alerts are configured for critical issues\n- View active alerts: **Alerting** → **Alert rules** (left sidebar)\n- Check alert history: **Alerting** → **Alert rules** → Click on any rule\n\n**Time Range:**\n- Use the time picker (top-right) to change the time range\n- Zoom in on graphs by clicking and dragging\n\n**Useful Links:**\n- 📚 [README Documentation](about:blank)\n- ⚙️ [Email Alerts Setup](about:blank)\n- 🔍 [Alert Rules Reference](about:blank)"
+        }
+      }
+    ]
+  },
+  "overwrite": true,
+  "folderId": null,
+  "folderUid": null
+}
