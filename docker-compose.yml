@@ -1,5 +1,9 @@
 version: '3.8'
 
+# Unraid Server Monitoring Stack
+# Install location: /mnt/user/appdata/monitoring/
+# After changes, run: docker-compose up -d
+
 services:
   # Grafana - Dashboard and Visualization
   grafana:
@@ -9,6 +13,10 @@ services:
     ports:
       - "3000:3000"
     environment:
+      # Unraid User/Group (nobody:users = 99:100)
+      - PUID=99
+      - PGID=100
+      # Admin credentials
       - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
       - GF_INSTALL_PLUGINS=
@@ -26,6 +34,7 @@ services:
       - GF_SMTP_SKIP_VERIFY=${SMTP_SKIP_VERIFY:-false}
       - ALERT_EMAIL_TO=${ALERT_EMAIL_TO:-admin@localhost}
     volumes:
+      # Data persistence
       - ./grafana/data:/var/lib/grafana
       - ./grafana/provisioning:/etc/grafana/provisioning
       - ./grafana/grafana.ini:/etc/grafana/grafana.ini
@@ -39,6 +48,7 @@ services:
     image: prom/prometheus:latest
     container_name: prometheus
     restart: unless-stopped
+    user: "99:100"  # Unraid nobody:users
     ports:
       - "9090:9090"
     command:
@@ -49,7 +59,7 @@ services:
       - '--web.console.templates=/etc/prometheus/consoles'
       - '--web.enable-lifecycle'
     volumes:
-      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./prometheus/data:/prometheus
     networks:
       - monitoring
@@ -65,10 +75,12 @@ services:
       - '--path.procfs=/host/proc'
       - '--path.sysfs=/host/sys'
       - '--path.rootfs=/rootfs'
-      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
-      - '--collector.netclass.ignored-devices=^(veth.*|br.*|docker.*|lo)$$'
-      - '--collector.netdev.device-exclude=^(veth.*|br.*|docker.*|lo)$$'
+      # Exclude Unraid system mounts, but INCLUDE /mnt for disk monitoring
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc|run|var/lib/docker)($$|/)'
+      - '--collector.netclass.ignored-devices=^(veth.*|br.*|docker.*|lo|shim.*)$$'
+      - '--collector.netdev.device-exclude=^(veth.*|br.*|docker.*|lo|shim.*)$$'
     volumes:
+      # Host system access
       - /proc:/host/proc:ro
       - /sys:/host/sys:ro
       - /:/rootfs:ro
@@ -81,7 +93,7 @@ services:
     container_name: cadvisor
     restart: unless-stopped
     ports:
-      - "8070:8080"
+      - "8070:8080"  # External 8070, Internal 8080
     volumes:
       - /:/rootfs:ro
       - /var/run:/var/run:ro
@@ -104,14 +116,27 @@ services:
     environment:
       - EXPORTER_PORT=9101
     volumes:
+      # Unraid system access
       - /proc:/host/proc:ro
       - /dev:/dev:ro
-      - /mnt:/mnt:ro
+      - /mnt:/mnt:ro  # Unraid array mounts (disk1, disk2, cache, etc.)
+      - /var/local/emhttp:/var/local/emhttp:ro  # Unraid system data (optional)
     privileged: true
+    # IMPORTANT: Unraid uses specific disk devices
+    # Uncomment and add your actual disk devices for SMART monitoring:
+    # devices:
+    #   - /dev/sda:/dev/sda  # Parity disk
+    #   - /dev/sdb:/dev/sdb  # Disk 1
+    #   - /dev/sdc:/dev/sdc  # Disk 2
+    #   - /dev/sdd:/dev/sdd  # Disk 3
+    #   - /dev/sde:/dev/sde  # Cache
+    #   # Add more devices as needed for your array
     networks:
       - monitoring
 
   # NVIDIA GPU Exporter - GPU Metrics via nvidia-smi
+  # OPTIONAL: Only enable if you have an NVIDIA GPU with Unraid Nvidia plugin installed
+  # To disable: Comment out this entire service or run: docker-compose up -d --scale nvidia-gpu-exporter=0
   nvidia-gpu-exporter:
     image: utkuozdemir/nvidia_gpu_exporter:1.2.0
     container_name: nvidia-gpu-exporter
@@ -119,21 +144,32 @@ services:
     ports:
       - "9835:9835"
     volumes:
+      # Unraid Nvidia plugin typically installs nvidia-smi to /usr/bin/
+      # Verify location with: which nvidia-smi
       - /usr/bin/nvidia-smi:/usr/bin/nvidia-smi:ro
-      - /usr/lib/x86_64-linux-gnu:/usr/lib/x86_64-linux-gnu:ro
+      # Library path may differ on Unraid - check if needed
+      # - /usr/lib/x86_64-linux-gnu:/usr/lib/x86_64-linux-gnu:ro
     devices:
+      # GPU device access - adjust based on your setup
       - /dev/nvidiactl:/dev/nvidiactl
       - /dev/nvidia0:/dev/nvidia0
+      # For multiple GPUs, add:
+      # - /dev/nvidia1:/dev/nvidia1
       - /dev/nvidia-uvm:/dev/nvidia-uvm
     environment:
       - NVIDIA_VISIBLE_DEVICES=all
     networks:
       - monitoring
+    # Graceful failure if no GPU
+    deploy:
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
 
 networks:
   monitoring:
     driver: bridge
 
-volumes:
-  grafana-data:
-  prometheus-data:
+# Note: Named volumes removed - using bind mounts for Unraid appdata structure
+# Data is stored in ./grafana/data and ./prometheus/data relative to this file
+# On Unraid, this should be: /mnt/user/appdata/monitoring/
